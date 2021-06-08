@@ -17,10 +17,10 @@ namespace dott
 			if ( !IsClient )
 				return;
 
-			RootPanel.StyleSheet.Load( "/ui/Hud.scss" );
-
 			RootPanel.AddChild<Vitals>();
-			RootPanel.AddChild<Ammo>();
+
+			
+			RootPanel.AddChild<Ammo>().StyleSheet.Load( "/ui/Hud.scss" );
 
 			RootPanel.AddChild<NameTags>();
 			RootPanel.AddChild<DamageIndicator>();
@@ -30,6 +30,7 @@ namespace dott
 			RootPanel.AddChild<KillFeed>();
 			RootPanel.AddChild<Scoreboard>();
 			RootPanel.AddChild<VoiceList>();
+			
 		}
 
 		[ClientRpc]

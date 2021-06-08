@@ -55,11 +55,11 @@ namespace dott
 		public void InfectRandomHuman()
 		{
 			var randHuman = GetAllHumans();
-			int randomInt = Rand.Int(1, randHuman.Count );
+			int randomInt = Rand.Int(0, randHuman.Count - 1 );
 
 			while ( randHuman[randomInt] == null )
 			{
-				randomInt = Rand.Int(1, randHuman.Count );
+				randomInt = Rand.Int(0, randHuman.Count - 1 );
 			}
 			
 			randHuman[randomInt].SetTeam( teams.Undead );
