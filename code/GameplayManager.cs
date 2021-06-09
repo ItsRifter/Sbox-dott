@@ -66,6 +66,8 @@ namespace dott
 			randHuman[randomInt].Respawn();
 
 			curState = RoundState.Active;
+			
+			
 		}
 		
 		public void RespawnAllHumans()

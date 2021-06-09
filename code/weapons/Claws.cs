@@ -21,21 +21,13 @@ namespace dott
 		
 		public override bool CanPrimaryAttack()
 		{
-			var tr = Trace.Ray( Owner.EyePos, Owner.EyePos + Owner.EyeRot.Forward * 78 )
-				.UseHitboxes()
-				.Ignore( Owner )
-				.Size( 5 )
-				.Run();
-
-			if ( tr.Entity is PlayerBase target )
-			{
-				if ( target.CurTeam == teams.Undead)
-					return false;
-			}
-			else
-				return false;
-
 			return base.CanPrimaryAttack() && Input.Pressed( InputButton.Attack1 );
+		}
+		
+		public override void SimulateAnimator( PawnAnimator anim )
+		{
+			anim.SetParam( "holdtype", 0 );
+			anim.SetParam( "aimat_weight", 1.0f );
 		}
 		
 		public override void AttackPrimary()

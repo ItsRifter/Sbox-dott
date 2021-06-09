@@ -1,0 +1,40 @@
+// 
+// dott.GameplayManager : Sandbox.Game 
+// 
+@PointClass = dott : ""
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+
+// 
+// dott.Claws : dott.WeaponBase 
+// 
+@SolidClass = dott_claws : ""
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+
+// 
+// dott.Pistol : dott.WeaponBase 
+// 
+@SolidClass = dott_pistol : ""
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+
+// 
+// dott.Shotgun : dott.WeaponBase 
+// 
+@SolidClass = dott_shotgun : ""
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+
+// 
+// dott.SMG : dott.WeaponBase 
+// 
+@SolidClass = dott_smg : ""
+[
+	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+]
+

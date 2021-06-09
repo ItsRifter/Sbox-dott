@@ -137,7 +137,17 @@ namespace dott
 		{
 			this.CurTeam = targetTeam;
 		}
-		
+
+		public override void TakeDamage( DamageInfo info )
+		{
+			var attacker = info.Attacker as PlayerBase;
+
+			if ( attacker.CurTeam == this.CurTeam  )
+				return;
+			
+			base.TakeDamage(info);
+
+		}
 		
 		public override void OnKilled()
 		{
