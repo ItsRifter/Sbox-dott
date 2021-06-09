@@ -21,6 +21,20 @@ namespace dott
 		
 		public override bool CanPrimaryAttack()
 		{
+			var tr = Trace.Ray( Owner.EyePos, Owner.EyePos + Owner.EyeRot.Forward * 78 )
+				.UseHitboxes()
+				.Ignore( Owner )
+				.Size( 5 )
+				.Run();
+
+			if ( tr.Entity is PlayerBase target )
+			{
+				if ( target.CurTeam == teams.Undead)
+					return false;
+			}
+			else
+				return false;
+
 			return base.CanPrimaryAttack() && Input.Pressed( InputButton.Attack1 );
 		}
 		
