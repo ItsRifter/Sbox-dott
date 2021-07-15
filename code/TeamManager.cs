@@ -1,19 +1,16 @@
 ﻿using System;
 using Sandbox;
 
-namespace dott
+partial class TeamManager
 {
-	partial class TeamManager
+	public TeamManager()
 	{
-		public TeamManager()
-		{
-			
-		}
+		
 	}
+}
 
-	public enum teams
-	{
-		Survivor,
-		Undead
-	}
+public enum teams
+{
+	Survivor,
+	Undead
 }

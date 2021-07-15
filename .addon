@@ -9,10 +9,10 @@
     
     "gamemodes":
     [
-    {
-     "name": "dawn-of-the-terrys",
-     "title": "Dawn of the Terrys",
-     "description": "A zombie survival gamemode with terrys"
-    }
+        {
+         "name": "dawn-of-the-terrys",
+         "title": "Dawn of the Terrys",
+         "description": "A zombie survival gamemode with terrys"
+        }
     ]
 }

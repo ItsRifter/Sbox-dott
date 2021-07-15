@@ -1,5 +1,4 @@
 ﻿
-using dott;
 using Sandbox;
 using Sandbox.UI;
 using Sandbox.UI.Construct;
@@ -15,7 +14,7 @@ public class Vitals : Panel
 		Team = Add.Label( "null", "team" );
 	}
 
-	[ Event("client.tick") ]
+	[Event("client.tick")]
 	public void Tick() {
 		var player = Local.Pawn;
 		if ( player == null ) return;

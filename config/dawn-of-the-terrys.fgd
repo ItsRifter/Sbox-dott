@@ -1,40 +1,58 @@
 // 
-// dott.GameplayManager : Sandbox.Game 
+// GameplayManager : Sandbox.Game 
 // 
 @PointClass = dott : ""
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+	enable_shadows(boolean) [ group="Render Properties" ] : "Shadow Casting" : 1 : "Whether this entity should cast shadows or not"
 ]
 
 // 
-// dott.Claws : dott.WeaponBase 
+// Claws : WeaponBase 
 // 
-@SolidClass = dott_claws : ""
+@PointClass = dott_claws : ""
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+	enable_shadows(boolean) [ group="Render Properties" ] : "Shadow Casting" : 1 : "Whether this entity should cast shadows or not"
+
+	input SetColor(string) : ""
 ]
 
 // 
-// dott.Pistol : dott.WeaponBase 
+// Pistol : WeaponBase 
 // 
-@SolidClass = dott_pistol : ""
+@PointClass = dott_pistol : ""
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+	enable_shadows(boolean) [ group="Render Properties" ] : "Shadow Casting" : 1 : "Whether this entity should cast shadows or not"
+
+	input SetColor(string) : ""
 ]
 
 // 
-// dott.Shotgun : dott.WeaponBase 
+// Shotgun : WeaponBase 
 // 
-@SolidClass = dott_shotgun : ""
+@PointClass = dott_shotgun : ""
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+	enable_shadows(boolean) [ group="Render Properties" ] : "Shadow Casting" : 1 : "Whether this entity should cast shadows or not"
+
+	input SetColor(string) : ""
 ]
 
 // 
-// dott.SMG : dott.WeaponBase 
+// SMG : WeaponBase 
 // 
-@SolidClass = dott_smg : ""
+@PointClass = dott_smg : ""
 [
 	targetname(target_source) : "Name" : : "The name that other entities refer to this entity by."
+	parentname(target_destination) [ group="Hierarchy" ] : "Parent" : : "The name of this entity's parent in the movement hierarchy. Entities with parents move with their parent."
+	enable_shadows(boolean) [ group="Render Properties" ] : "Shadow Casting" : 1 : "Whether this entity should cast shadows or not"
+
+	input SetColor(string) : ""
 ]
 

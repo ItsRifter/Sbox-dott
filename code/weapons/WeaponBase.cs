@@ -7,260 +7,256 @@ using System.Linq;
 using System.Numerics;
 using System.Threading.Tasks;
 
-namespace dott
+partial class WeaponBase : BaseWeapon
 {
-	partial class WeaponBase : BaseWeapon
+	public virtual AmmoType AmmoType => AmmoType.Pistol;
+	public virtual int ClipSize => 16;
+	public virtual float ReloadTime => 3.0f;
+	public virtual int Bucket => 0;
+	public virtual int BucketWeight => 100;
+
+	[Net, Predicted]
+	public int AmmoClip { get; set; }
+
+	[Net, Predicted]
+	public TimeSince TimeSinceReload { get; set; }
+
+	[Net, Predicted]
+	public bool IsReloading { get; set; }
+
+	[Net, Predicted]
+	public TimeSince TimeSinceDeployed { get; set; }
+
+
+	public PickupTrigger PickupTrigger { get; protected set; }
+
+
+	public int AvailableAmmo()
 	{
-		public virtual AmmoType AmmoType => AmmoType.Pistol;
-		public virtual int ClipSize => 16;
-		public virtual float ReloadTime => 3.0f;
-		public virtual int Bucket => 0;
-		public virtual int BucketWeight => 100;
+		var owner = Owner as PlayerBase;
+		if ( owner == null ) return 0;
+		return owner.AmmoCount( AmmoType );
+	}
 
-		[Net, Predicted]
-		public int AmmoClip { get; set; }
+	public override void ActiveStart( Entity ent )
+	{
+		base.ActiveStart( ent );
 
-		[Net, Predicted]
-		public TimeSince TimeSinceReload { get; set; }
+		TimeSinceDeployed = 0;
+	}
 
-		[Net, Predicted]
-		public bool IsReloading { get; set; }
+	public override void Reload()
+	{
+		if ( IsReloading )
+			return;
 
-		[Net, Predicted]
-		public TimeSince TimeSinceDeployed { get; set; }
+		if ( AmmoClip >= ClipSize )
+			return;
 
+		TimeSinceReload = 0;
 
-		public PickupTrigger PickupTrigger { get; protected set; }
-
-
-		public int AvailableAmmo()
+		if ( Owner is PlayerBase player )
 		{
-			var owner = Owner as PlayerBase;
-			if ( owner == null ) return 0;
-			return owner.AmmoCount( AmmoType );
-		}
-
-		public override void ActiveStart( Entity ent )
-		{
-			base.ActiveStart( ent );
-
-			TimeSinceDeployed = 0;
-		}
-
-		public override void Reload()
-		{
-			if ( IsReloading )
+			if ( player.AmmoCount( AmmoType ) <= 0 )
 				return;
-
-			if ( AmmoClip >= ClipSize )
-				return;
-
-			TimeSinceReload = 0;
-
-			if ( Owner is PlayerBase player )
-			{
-				if ( player.AmmoCount( AmmoType ) <= 0 )
-					return;
-
-				StartReloadEffects();
-			}
-
-			IsReloading = true;
-
-			(Owner as AnimEntity).SetAnimBool( "b_reload", true );
 
 			StartReloadEffects();
 		}
 
-		public override void Simulate( Client owner )
+		IsReloading = true;
+
+		(Owner as AnimEntity).SetAnimBool( "b_reload", true );
+
+		StartReloadEffects();
+	}
+
+	public override void Simulate( Client owner )
+	{
+		if ( TimeSinceDeployed < 0.6f )
+			return;
+
+		if ( !IsReloading )
 		{
-			if ( TimeSinceDeployed < 0.6f )
+			base.Simulate( owner );
+		}
+
+		if ( IsReloading && TimeSinceReload > ReloadTime )
+		{
+			OnReloadFinish();
+		}
+	}
+
+	public virtual void OnReloadFinish()
+	{
+		IsReloading = false;
+
+		if ( Owner is PlayerBase player )
+		{
+			var ammo = player.TakeAmmo( AmmoType, ClipSize - AmmoClip );
+			if ( ammo == 0 )
 				return;
 
-			if ( !IsReloading )
-			{
-				base.Simulate( owner );
-			}
-
-			if ( IsReloading && TimeSinceReload > ReloadTime )
-			{
-				OnReloadFinish();
-			}
+			AmmoClip += ammo;
 		}
+	}
 
-		public virtual void OnReloadFinish()
+	[ClientRpc]
+	public virtual void StartReloadEffects()
+	{
+		ViewModelEntity?.SetAnimBool( "reload", true );
+
+		// TODO - player third person model reload
+	}
+
+	public override void AttackPrimary()
+	{
+		TimeSincePrimaryAttack = 0;
+		TimeSinceSecondaryAttack = 0;
+
+		//
+		// Tell the clients to play the shoot effects
+		//
+		ShootEffects();
+
+		//
+		// ShootBullet is coded in a way where we can have bullets pass through shit
+		// or bounce off shit, in which case it'll return multiple results
+		//
+		foreach ( var tr in TraceBullet( Owner.EyePos, Owner.EyePos + Owner.EyeRot.Forward * 5000 ) )
 		{
-			IsReloading = false;
+			tr.Surface.DoBulletImpact( tr );
 
-			if ( Owner is PlayerBase player )
-			{
-				var ammo = player.TakeAmmo( AmmoType, ClipSize - AmmoClip );
-				if ( ammo == 0 )
-					return;
-
-				AmmoClip += ammo;
-			}
-		}
-
-		[ClientRpc]
-		public virtual void StartReloadEffects()
-		{
-			ViewModelEntity?.SetAnimBool( "reload", true );
-
-			// TODO - player third person model reload
-		}
-
-		public override void AttackPrimary()
-		{
-			TimeSincePrimaryAttack = 0;
-			TimeSinceSecondaryAttack = 0;
+			if ( !IsServer ) continue;
+			if ( !tr.Entity.IsValid() ) continue;
 
 			//
-			// Tell the clients to play the shoot effects
+			// We turn predictiuon off for this, so aany exploding effects don't get culled etc
 			//
-			ShootEffects();
-
-			//
-			// ShootBullet is coded in a way where we can have bullets pass through shit
-			// or bounce off shit, in which case it'll return multiple results
-			//
-			foreach ( var tr in TraceBullet( Owner.EyePos, Owner.EyePos + Owner.EyeRot.Forward * 5000 ) )
+			using ( Prediction.Off() )
 			{
-				tr.Surface.DoBulletImpact( tr );
+				var damage = DamageInfo.FromBullet( tr.EndPos, Owner.EyeRot.Forward * 100, 15 )
+					.UsingTraceResult( tr )
+					.WithAttacker( Owner )
+					.WithWeapon( this );
 
-				if ( !IsServer ) continue;
-				if ( !tr.Entity.IsValid() ) continue;
-
-				//
-				// We turn predictiuon off for this, so aany exploding effects don't get culled etc
-				//
-				using ( Prediction.Off() )
-				{
-					var damage = DamageInfo.FromBullet( tr.EndPos, Owner.EyeRot.Forward * 100, 15 )
-						.UsingTraceResult( tr )
-						.WithAttacker( Owner )
-						.WithWeapon( this );
-
-					tr.Entity.TakeDamage( damage );
-				}
+				tr.Entity.TakeDamage( damage );
 			}
 		}
+	}
 
-		[ClientRpc]
-		protected virtual void ShootEffects()
+	[ClientRpc]
+	protected virtual void ShootEffects()
+	{
+		Host.AssertClient();
+
+		Particles.Create( "particles/pistol_muzzleflash.vpcf", EffectEntity, "muzzle" );
+
+		if ( IsLocalPawn )
 		{
-			Host.AssertClient();
-
-			Particles.Create( "particles/pistol_muzzleflash.vpcf", EffectEntity, "muzzle" );
-
-			if ( IsLocalPawn )
-			{
-				new Sandbox.ScreenShake.Perlin();
-			}
-
-			ViewModelEntity?.SetAnimBool( "fire", true );
-			CrosshairPanel?.OnEvent( "fire" );
+			new Sandbox.ScreenShake.Perlin();
 		}
 
-		/// <summary>
-		/// Shoot a single bullet
-		/// </summary>
-		public virtual void ShootBullet( float spread, float force, float damage, float bulletSize )
+		ViewModelEntity?.SetAnimBool( "fire", true );
+	}
+
+	/// <summary>
+	/// Shoot a single bullet
+	/// </summary>
+	public virtual void ShootBullet( float spread, float force, float damage, float bulletSize )
+	{
+		var forward = Owner.EyeRot.Forward;
+		forward += (Vector3.Random + Vector3.Random + Vector3.Random + Vector3.Random) * spread * 0.25f;
+		forward = forward.Normal;
+
+		//
+		// ShootBullet is coded in a way where we can have bullets pass through shit
+		// or bounce off shit, in which case it'll return multiple results
+		//
+		foreach ( var tr in TraceBullet( Owner.EyePos, Owner.EyePos + forward * 5000, bulletSize ) )
 		{
-			var forward = Owner.EyeRot.Forward;
-			forward += (Vector3.Random + Vector3.Random + Vector3.Random + Vector3.Random) * spread * 0.25f;
-			forward = forward.Normal;
+			tr.Surface.DoBulletImpact( tr );
+
+			if ( !IsServer ) continue;
+			if ( !tr.Entity.IsValid() ) continue;
 
 			//
-			// ShootBullet is coded in a way where we can have bullets pass through shit
-			// or bounce off shit, in which case it'll return multiple results
+			// We turn predictiuon off for this, so any exploding effects don't get culled etc
 			//
-			foreach ( var tr in TraceBullet( Owner.EyePos, Owner.EyePos + forward * 5000, bulletSize ) )
+			using ( Prediction.Off() )
 			{
-				tr.Surface.DoBulletImpact( tr );
+				var damageInfo = DamageInfo.FromBullet( tr.EndPos, forward * 100 * force, damage )
+					.UsingTraceResult( tr )
+					.WithAttacker( Owner )
+					.WithWeapon( this );
 
-				if ( !IsServer ) continue;
-				if ( !tr.Entity.IsValid() ) continue;
-
-				//
-				// We turn predictiuon off for this, so any exploding effects don't get culled etc
-				//
-				using ( Prediction.Off() )
-				{
-					var damageInfo = DamageInfo.FromBullet( tr.EndPos, forward * 100 * force, damage )
-						.UsingTraceResult( tr )
-						.WithAttacker( Owner )
-						.WithWeapon( this );
-
-					tr.Entity.TakeDamage( damageInfo );
-				}
+				tr.Entity.TakeDamage( damageInfo );
 			}
 		}
+	}
 
-		public bool TakeAmmo( int amount )
+	public bool TakeAmmo( int amount )
+	{
+		if ( AmmoClip < amount )
+			return false;
+
+		AmmoClip -= amount;
+		return true;
+	}
+
+	[ClientRpc]
+	public virtual void DryFire()
+	{
+		// CLICK
+	}
+
+	public override void CreateViewModel()
+	{
+		Host.AssertClient();
+
+		if ( string.IsNullOrEmpty( ViewModelPath ) )
+			return;
+
+		ViewModelEntity = new ViewModel();
+		ViewModelEntity.Position = Position;
+		ViewModelEntity.Owner = Owner;
+		ViewModelEntity.EnableViewmodelRendering = true;
+		ViewModelEntity.SetModel( ViewModelPath );
+	}
+
+	public override void CreateHudElements()
+	{
+		if ( Local.Hud == null ) return;
+	}
+
+	public bool IsUsable()
+	{
+		if ( AmmoClip > 0 ) return true;
+		return AvailableAmmo() > 0;
+	}
+
+	public override void OnCarryStart( Entity carrier )
+	{
+		base.OnCarryStart( carrier );
+
+		if ( PickupTrigger.IsValid() )
 		{
-			if ( AmmoClip < amount )
-				return false;
-
-			AmmoClip -= amount;
-			return true;
+			PickupTrigger.EnableTouch = false;
 		}
+	}
 
-		[ClientRpc]
-		public virtual void DryFire()
+	public override void OnCarryDrop( Entity dropper )
+	{
+		base.OnCarryDrop( dropper );
+
+		if ( PickupTrigger.IsValid() )
 		{
-			// CLICK
+			PickupTrigger.EnableTouch = true;
 		}
+	}
 
-		public override void CreateViewModel()
-		{
-			Host.AssertClient();
-
-			if ( string.IsNullOrEmpty( ViewModelPath ) )
-				return;
-
-			ViewModelEntity = new ViewModel();
-			ViewModelEntity.Position = Position;
-			ViewModelEntity.Owner = Owner;
-			ViewModelEntity.EnableViewmodelRendering = true;
-			ViewModelEntity.SetModel( ViewModelPath );
-		}
-
-		public override void CreateHudElements()
-		{
-			if ( Local.Hud == null ) return;
-		}
-
-		public bool IsUsable()
-		{
-			if ( AmmoClip > 0 ) return true;
-			return AvailableAmmo() > 0;
-		}
-
-		public override void OnCarryStart( Entity carrier )
-		{
-			base.OnCarryStart( carrier );
-
-			if ( PickupTrigger.IsValid() )
-			{
-				PickupTrigger.EnableTouch = false;
-			}
-		}
-
-		public override void OnCarryDrop( Entity dropper )
-		{
-			base.OnCarryDrop( dropper );
-
-			if ( PickupTrigger.IsValid() )
-			{
-				PickupTrigger.EnableTouch = true;
-			}
-		}
-
-		public virtual void OnHolster()
-		{
-
-		}
+	public virtual void OnHolster()
+	{
 
 	}
+
 }
